@@ -12,7 +12,7 @@ import {
 } from 'vue'
 import { useMergedState } from 'vooks'
 import { useConfig, useFormItem } from '../../_mixins'
-import { warn, call, MaybeArray } from '../../_utils'
+import { warn, call, MaybeArray, deepEqual } from '../../_utils'
 import type { ExtractPublicPropTypes } from '../../_utils'
 
 export interface CheckboxGroupInjection {
@@ -20,9 +20,13 @@ export interface CheckboxGroupInjection {
   maxRef: Ref<number | undefined>
   minRef: Ref<number | undefined>
   disabledRef: Ref<boolean>
-  valueSetRef: Ref<Set<string | number>>
+  valueSetRef: Ref<Set<string | number | object>>
   mergedSizeRef: Ref<'small' | 'medium' | 'large'>
-  toggleCheckbox: (checked: boolean, checkboxValue: string | number) => void
+  toggleCheckbox: (
+    checked: boolean,
+    checkboxValue: string | number | object
+  ) => void
+  checkExist: (value: any) => boolean
 }
 
 export const checkboxGroupInjectionKey: InjectionKey<CheckboxGroupInjection> =
@@ -32,9 +36,9 @@ const checkboxGroupProps = {
   min: Number,
   max: Number,
   size: String as PropType<'small' | 'medium' | 'large'>,
-  value: Array as PropType<Array<string | number> | null>,
+  value: Array as PropType<Array<string | number | object> | null>,
   defaultValue: {
-    type: Array as PropType<Array<string | number> | null>,
+    type: Array as PropType<Array<string | number | object> | null>,
     default: null
   },
   disabled: {
@@ -42,15 +46,15 @@ const checkboxGroupProps = {
     default: undefined
   },
   'onUpdate:value': [Function, Array] as PropType<
-  MaybeArray<(value: Array<string | number>) => void>
+  MaybeArray<(value: Array<string | number | object>) => void>
   >,
   onUpdateValue: [Function, Array] as PropType<
-  MaybeArray<(value: Array<string | number>) => void>
+  MaybeArray<(value: Array<string | number | object>) => void>
   >,
   // deprecated
   onChange: {
     type: [Function, Array] as PropType<
-    MaybeArray<(value: Array<string | number>) => void> | undefined
+    MaybeArray<(value: Array<string | number | object>) => void> | undefined
     >,
     validator: () => {
       if (__DEV__) {
@@ -86,15 +90,16 @@ export default defineComponent({
       return mergedValueRef.value?.length || 0
     })
 
-    const valueSetRef = computed<Set<string | number>>(() => {
+    const valueSetRef = computed<Set<string | number | object>>(() => {
       if (Array.isArray(mergedValueRef.value)) {
         return new Set(mergedValueRef.value)
       }
       return new Set()
     })
+
     function toggleCheckbox (
       checked: boolean,
-      checkboxValue: string | number
+      checkboxValue: string | number | object
     ): void {
       const { nTriggerFormInput, nTriggerFormChange } = formItem
       const {
@@ -105,7 +110,9 @@ export default defineComponent({
 
       if (Array.isArray(mergedValueRef.value)) {
         const groupValue = Array.from(mergedValueRef.value)
-        const index = groupValue.findIndex((value) => value === checkboxValue)
+        const index = groupValue.findIndex((value) => {
+          return deepEqual(value, checkboxValue)
+        })
         if (checked) {
           if (!~index) {
             groupValue.push(checkboxValue)
@@ -153,7 +160,14 @@ export default defineComponent({
       valueSetRef: valueSetRef,
       disabledRef: mergedDisabledRef,
       mergedSizeRef: mergedSizeRef,
-      toggleCheckbox
+      toggleCheckbox,
+      checkExist: (v: any) => {
+        if (Array.isArray(mergedValueRef.value)) {
+          return mergedValueRef.value.findIndex((i) => deepEqual(i, v)) !== -1
+        } else {
+          return false
+        }
+      }
     })
     return {
       mergedClsPrefix: mergedClsPrefixRef

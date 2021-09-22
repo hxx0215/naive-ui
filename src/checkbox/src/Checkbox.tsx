@@ -35,7 +35,7 @@ const checkboxProps = {
     default: undefined
   },
   defaultChecked: Boolean,
-  value: [String, Number] as PropType<string | number>,
+  value: [String, Number, Object] as PropType<string | number | object>,
   disabled: {
     type: Boolean as PropType<boolean | undefined>,
     default: undefined
@@ -136,9 +136,8 @@ export default defineComponent({
     )
     const renderedCheckedRef = useMemo(() => {
       if (NCheckboxGroup) {
-        const groupValueSet = NCheckboxGroup.valueSetRef.value
-        if (groupValueSet && props.value !== undefined) {
-          return groupValueSet.has(props.value)
+        if (props.value !== undefined) {
+          return NCheckboxGroup.checkExist(props.value)
         }
         return false
       } else {
