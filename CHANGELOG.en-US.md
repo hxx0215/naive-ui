@@ -2,9 +2,16 @@
 
 ## Pending
 
+### Localization
+
+- Add ukUA locale.
+
 ### Fixes
 
 - Fix `n-global-style` applies style transition on first mount.
+- Fix `n-drawer` border transition [#1211].
+- Fix `n-alert` aria support.
+- Fix `n-checkbox` aria support.
 
 ## 2.19.1 (2021-09-21)
 
